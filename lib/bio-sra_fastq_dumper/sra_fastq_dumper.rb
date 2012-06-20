@@ -1,4 +1,5 @@
 require 'tmpdir'
+require 'bio'
 
 module Bio
   class FastqDumper
@@ -12,17 +13,24 @@ module Bio
       sra = File.absolute_path(fastq_filename)
       raise unless File.exist?(sra)
       
+      puts `pwd`
       current_directory = Dir.getwd
+      puts 'balh'
       Dir.mktmpdir do |dir|
         Dir.chdir dir
+        puts '2'
         
         # Create a symlink to the fastq file passed as a parameter
-        local_path = File.pathname(sra)
+        local_path = File.basename(sra)
+        puts '3'
+        p sra
+        p local_path
         File.symlink sra, local_path
+        puts '4'
         
         # Run fastq-dumper from the SRA toolkit
         command = [
-          'fastq-dumper',
+          'fastq-dump',
           local_path
         ]
         Bio::Command.call_command_open3(command) do |stdin, stdout, stderr|
@@ -31,7 +39,7 @@ module Bio
         end
         
         # Let the user use the dumped fastq file
-        yield local_path
+        yield local_path.gsub(/.lite.sra$/,'').gsub(/.sra/,'')+'.fastq'
         
         # Change back to the original directory
         Dir.chdir current_directory
